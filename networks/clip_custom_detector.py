@@ -5,9 +5,9 @@ import open_clip
 import numpy as np
 from skimage.feature import local_binary_pattern
 
-class MultimodalDetector(nn.Module):
+class CLIPImageClassifier(nn.Module):
     def __init__(self, prompt_length=16, lbp_radius=1, lbp_points=8, use_prompt=True, use_lbp=True, multiclass=False):
-        super(MultimodalDetector, self).__init__()
+        super(CLIPImageClassifier, self).__init__()
         
         self.use_prompt = use_prompt
         self.use_lbp = use_lbp
@@ -65,7 +65,16 @@ class MultimodalDetector(nn.Module):
         )
 
     def extract_lbp_features(self, x):
-        """ Extrai histogramas de textura LBP (Processamento em Batch) """
+        """
+            Extrai histogramas de textura baseados no operador Local Binary Pattern (LBP).
+            
+            O método processa o lote de imagens realizando as seguintes etapas:
+            1. Conversão Cromática: Transforma as imagens RGB do lote para tons de cinza.
+            2. Mapeamento de Textura: Aplica o operador LBP invariante a rotações na 
+            sua variante uniforme ('uniform') utilizando o raio e pontos configurados.
+            3. Vetorização Estatística: Computa e normaliza o histograma de frequências 
+            dos padrões LBP gerados, retornando uma representação compacta de microtexturas.
+        """
         device = x.device
         
         # Conversão manual RGB para Tons de Cinza
@@ -145,6 +154,21 @@ class MultimodalDetector(nn.Module):
         return text_features
 
     def forward(self, images):
+        """
+            Executa o fluxo de inferência feedforward do modelo.
+            
+            O método realiza a extração de características em três níveis independentes:
+            1. Representação Visual Semântica: Obtida através do codificador de imagem 
+            congelado do CLIP (ViT-L/14).
+            2. Contexto Textual Otimizado: Características extraídas via injeção de 
+            Soft Prompts aprendíveis indexados por classe (se 'use_prompt' for True).
+            3. Atributos de Microtextura de Baixo Nível: Histogramas extraídos via 
+            operador Local Binary Pattern (LBP) na CPU (se 'use_lbp' for True).
+            
+            Todas as representações são normalizadas e fundidas via concatenação no 
+            espaço latente, gerando o vetor composto que alimenta a rede perceptron 
+            multicamadas (MLP) para a classificação final.
+        """
         batch_size = images.shape[0]
         device = images.device
         
