@@ -6,14 +6,23 @@ import numpy as np
 from skimage.feature import local_binary_pattern
 
 class MultimodalDetector(nn.Module):
-    def __init__(self, num_classes=1, prompt_length=16, lbp_radius=1, lbp_points=8, use_prompt=True, use_lbp=True):
+    def __init__(self, prompt_length=16, lbp_radius=1, lbp_points=8, use_prompt=True, use_lbp=True, multiclass=False):
         super(MultimodalDetector, self).__init__()
         
         self.use_prompt = use_prompt
         self.use_lbp = use_lbp
+        self.multiclass = multiclass
+        self.prompt_length = prompt_length
         
-        # Definição das classes para o Prompt Tuning
-        self.class_names = ["real image", "an AI-generated image"]
+        # Configuração dinâmica baseada no escopo do experimento (Binário vs Multiclasse)
+        if not self.multiclass:
+            self.class_names = ["real image", "an AI-generated image"]
+            num_prompt_classes = 2
+            self.output_dim = 1  # Saída binária
+        else:
+            self.class_names = ["real image", "an AI-generated image", "a tampered manipulated image"]
+            num_prompt_classes = 3
+            self.output_dim = 3  # Saída multiclasse
         
         # Carregamento do CLIP ViT-L/14 (Com Pesos Congelados)
         self.clip_model, _, self.preprocess = open_clip.create_model_and_transforms(
@@ -27,20 +36,19 @@ class MultimodalDetector(nn.Module):
         self.lbp_points = lbp_points
         self.lbp_dim = lbp_points + 2 
         
-        # Parâmetros Aprendíveis (Soft Prompts) - Só aloca memória se for usar
-        self.prompt_length = prompt_length
+        # Parâmetros Aprendíveis (Soft Prompts dedicados por classe)
         if self.use_prompt:
-            self.soft_prompts = nn.Parameter(torch.randn(prompt_length, 768) * 0.02)
+            self.soft_prompts = nn.Parameter(torch.randn(num_prompt_classes, prompt_length, 768) * 0.02)
         else:
             self.register_parameter('soft_prompts', None)
         
-        # Cálculo DINÂMICO da entrada da MLP final
+        # Cálculo dinâmico da entrada da MLP final
         img_dim = self.clip_model.visual.output_dim    
         input_mlp_dim = img_dim
         
         if self.use_prompt:
             txt_dim = self.clip_model.text_projection.shape[1]
-            input_mlp_dim += (txt_dim * 2)
+            input_mlp_dim += (txt_dim * num_prompt_classes)
             
         if self.use_lbp:
             input_mlp_dim += self.lbp_dim 
@@ -48,12 +56,12 @@ class MultimodalDetector(nn.Module):
         # Construção da MLP adaptada para o tamanho da variação
         self.mlp = nn.Sequential(
             nn.Linear(input_mlp_dim, 512),
-            nn.BatchNorm1d(512), # Equilibra as dimensões e escalas das features
+            nn.BatchNorm1d(512), # Normalizando para equilibrar a escala das dimensões e escalas das features 
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(512, 128),
             nn.ReLU(),
-            nn.Linear(128, num_classes)
+            nn.Linear(128, self.output_dim)
         )
 
     def extract_lbp_features(self, x):
@@ -77,16 +85,35 @@ class MultimodalDetector(nn.Module):
             
         return torch.tensor(np.array(lbp_histograms), dtype=torch.float32).to(device)
 
-    def get_text_features(self, label_text, device):
-        """ Lógica do 'Sanduíche' de Prompt Tuning com suporte a múltiplos tokens """
+    def get_text_features(self, label_text, class_idx, device):
+        """
+            Extrai as características textuais do CLIP. Caso 'use_prompt' seja True, 
+            realiza a injeção de Soft Prompts aprendíveis (Prompt Tuning) no espaço de 
+            embeddings textuais de forma indexada por classe. Caso contrário, realiza 
+            a extração nativa do CLIP Text Encoder.
+            
+            Para o fluxo com Prompt Tuning, a estrutura do vetor de tokens gerada segue 
+            o seguinte alinhamento de componentes:
+            [SOS] + [Soft Prompts Aprendíveis (16)] + [Conteúdo Semântico da Classe] + [EOS + Padding]
+            
+            A técnica expande o contexto textual com representações latentes otimizadas 
+            durante o treino para guiar o alinhamento visual-textual forense.
+        """
         tokens = open_clip.tokenize([label_text]).to(device) 
         
+        # Sem prompt tunning: Extração direta e limpa do CLIP Text Encoder
+        if not self.use_prompt:
+            with torch.no_grad():
+                text_features = self.clip_model.encode_text(tokens)
+                return F.normalize(text_features, dim=-1)
+
+        # Com prompt tunning: Injeção de Soft Prompts aprendíveis
         with torch.no_grad():
             embedding_real = self.clip_model.token_embedding(tokens) 
             
         eos_index_orig = tokens.argmax(dim=-1).item()
         
-        # Isolando os componentes do texto original
+        # Isolando os componentes estruturais do texto original
         prefix = embedding_real[:, :1, :] 
         class_content = embedding_real[:, 1:eos_index_orig, :] 
         num_class_tokens = class_content.shape[1]
@@ -94,10 +121,13 @@ class MultimodalDetector(nn.Module):
         suffix_len = 77 - 1 - self.prompt_length - num_class_tokens
         suffix = embedding_real[:, eos_index_orig : eos_index_orig + suffix_len, :]
         
+        # Seleciona cirurgicamente a embedding aprendível da respectiva classe
+        current_soft_prompt = self.soft_prompts[class_idx].unsqueeze(0)
+        
         # Injeção dos soft prompts aprendíveis entre o prefixo (SOS) e o conteúdo
         tuned_embedding = torch.cat([
             prefix, 
-            self.soft_prompts.unsqueeze(0), 
+            current_soft_prompt, 
             class_content, 
             suffix
         ], dim=1)
@@ -118,23 +148,20 @@ class MultimodalDetector(nn.Module):
         batch_size = images.shape[0]
         device = images.device
         
-        # 1. Feature de Imagem (CLIP Visual Congelado) - Sempre inclusa
+        # Feature de Imagem (CLIP Visual Congelado)
         image_features = self.clip_model.encode_image(images)
         image_features = F.normalize(image_features, dim=-1)
         
         features_compostas = [image_features]
         
-        # 2. Condicional: Inclusão do Prompt Tuning de Texto
+        # Inclusão do Prompt Tuning de Texto
         if self.use_prompt:
-            text_feat_real = self.get_text_features(self.class_names[0], device)
-            text_feat_fake = self.get_text_features(self.class_names[1], device)
+            for idx, class_name in enumerate(self.class_names):
+                text_feat = self.get_text_features(class_name, idx, device)
+                text_feat = F.normalize(text_feat, dim=-1).repeat(batch_size, 1)
+                features_compostas.append(text_feat)
             
-            text_feat_real = F.normalize(text_feat_real, dim=-1).repeat(batch_size, 1)
-            text_feat_fake = F.normalize(text_feat_fake, dim=-1).repeat(batch_size, 1)
-            
-            features_compostas.extend([text_feat_real, text_feat_fake])
-            
-        # 3. Condicional: Inclusão do Atributo de Baixo Nível (LBP)
+        # Inclusão do Atributo de Baixo Nível (LBP)
         if self.use_lbp:
             lbp_features = self.extract_lbp_features(images)
             features_compostas.append(lbp_features)
