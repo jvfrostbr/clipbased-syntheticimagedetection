@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(SCRIPT_DIR)
 sys.path.append(BASE_DIR)
 
 try:
-    from networks.custom_detector import MultimodalDetector
+    from networks.clip_custom_detector import CLIPImageClassifier
 except ImportError:
     print(f"❌ Erro: Não foi possível encontrar 'networks.custom_detector' em {BASE_DIR}")
     sys.exit(1)
@@ -81,7 +81,7 @@ def main():
     print(f"✅ {len(all_images)} imagens encontradas.")
 
     df_results = pd.DataFrame({"filename": [os.path.basename(p) for p in all_images]})
-    model = MultimodalDetector().to(DEVICE)
+    model = CLIPImageClassifier().to(DEVICE)
     model.eval()
 
     for nome_exibicao, caminho_relativo in MODELOS_TESTE.items():
