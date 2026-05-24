@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 try:
-    from networks.custom_detector import MultimodalDetector
+    from networks.clip_custom_detector import CLIPImageClassifier
 except ImportError:
     print(" Erro: Não foi possível encontrar 'networks.custom_detector'.")
     sys.exit(1)
@@ -65,7 +65,7 @@ def main():
     print(f"🚀 Iniciando motor em: {DEVICE}")
 
     # Inicializa o detector
-    model = MultimodalDetector().to(DEVICE)
+    model = CLIPImageClassifier().to(DEVICE)
 
     # Otimizador com configuração diferenciada para soft prompts e MLP
     optimizer = optim.AdamW([
