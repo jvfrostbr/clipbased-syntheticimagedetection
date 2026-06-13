@@ -1,0 +1,88 @@
+deformed hands and fingers;mãos e dedos deformados
+extra fingers;dedos extras
+missing fingers;dedos faltando
+fused fingers;dedos fundidos
+malformed fingernails;unhas malformadas
+hand blending into object;mão fundindo com objeto
+impossible finger joints;juntas dos dedos impossíveis
+asymmetric eyes;olhos assimétricos
+misshaped pupils;pupilas deformadas
+strabismus cross-eyed;estrabismo
+heterochromia eyes;heterocromia (olhos de cores diferentes)
+teeth blending together;dentes fundidos
+too many teeth;excesso de dentes
+gum anomalies;anomalias na gengiva
+hair blending into clothes;cabelo fundindo com a roupa
+floating hair strands;fios de cabelo flutuando
+hair defying gravity;cabelo desafiando a gravidade
+unnatural waxy skin;pele cerosa não natural
+plastic doll skin;pele de boneca de plástico
+no skin pores;pele sem poros
+oversmoothed facial features;rosto excessivamente suavizado
+extra limbs;membros extras
+anatomically impossible pose;pose anatomicamente impossível
+twisted limbs;membros torcidos
+neck too long;pescoço muito longo
+incorrect light reflection;reflexo de luz incorreto
+missing reflection in mirror;reflexo faltando no espelho
+reflection showing wrong object;reflexo mostrando objeto errado
+inconsistent shadows;sombras inconsistentes
+shadows pointing wrong way;sombras na direção errada
+missing cast shadows;falta de sombras projetadas
+light source conflict;conflito de fontes de luz
+unmotivated lighting;iluminação sem fonte lógica
+subsurface scattering artifacts;pele com aspecto de cera (luz)
+glass refraction error;erro de refração em vidro
+liquid physics error;erro na física de líquidos
+water defying gravity;água desafiando a gravidade
+metallic texture looking plastic;metal com aparência de plástico
+cloth texture blending into skin;textura de roupa fundindo com a pele
+car with 5 wheels;carro com 5 rodas
+bicycle with missing parts;bicicleta com peças faltando
+distorted vehicle wheels;rodas de veículo distorcidas
+chair with extra legs;cadeira com pernas extras
+table legs blending;pernas da mesa fundidas
+floating furniture;móveis flutuando
+holding object incorrectly;segurando objeto incorretamente
+object merging with hand;objeto fundindo com a mão
+levitating objects;objetos levitando
+impossible clothing folds;dobras de roupa impossíveis
+zippers leading nowhere;zíperes que não levam a nada
+buttons inconsistent;botões inconsistentes
+glasses blending into skin;óculos fundindo com a pele
+asymmetric glasses frames;armação de óculos assimétrica
+jewelry melting into skin;joias derretendo na pele
+watch face gibberish;relógio com mostrador ilegível
+impossible architecture;arquitetura impossível
+stairs leading nowhere;escadas que não levam a nada
+mismatched windows;janelas incompatíveis
+curved pillars;pilares curvados
+asymmetrical building structure;estrutura de prédio assimétrica
+rooflines not matching;linhas do telhado não coincidem
+warped straight lines;linhas retas deformadas
+non-euclidean geometry;geometria não euclidiana
+tilted horizon;horizonte inclinado
+floor texture tiling error;erro de padrão no piso
+vanishing point mismatch;ponto de fuga incompatível
+animal with extra legs;animal com pernas extras
+animal with missing legs;animal com pernas faltando
+morphed animal faces;rosto de animal deformado
+leaves blending together;folhas fundidas
+repetitive texture tiling;textura repetitiva (tiling)
+identical clouds;nuvens idênticas
+flowers merging;flores se fundindo
+tree branches ending abruptly;galhos terminando abruptamente
+floating rocks;pedras flutuando
+oversaturated hdr colors;cores HDR supersaturadas
+excessive contrast;contraste excessivo
+unnatural bokeh blur;desfoque bokeh não natural
+high frequency noise artifacts;artefatos de ruído de alta frequência
+jpeg compression artifacts;artefatos de compressão JPEG
+grid pattern noise;ruído em padrão de grade
+oil painting filter effect;efeito de filtro de pintura a óleo
+smudged textures;texturas borradas
+chromatic aberration abuse;abuso de aberração cromática
+gibberish text;texto sem sentido
+alien hieroglyphs;hieróglifos alienígenas
+illegible signboard;placa ilegível
+morphed logos;logos deformados
