@@ -5,7 +5,7 @@ import numpy as np
 import open_clip
 from PIL import Image
 
-from  segmentation_clipseg import CLIPSegModel 
+from .segmentation_clipseg import CLIPSegModel 
 
 class ForensicExplainer:
     def __init__(self, clip_base_model, preprocess_fn, device=None):
